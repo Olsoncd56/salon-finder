@@ -3,246 +3,274 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hair Salon Finder - San Juan Capistrano</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Salon Finder & CSV Exporter</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            background-color: #f3f4f6;
         }
         .container {
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 32px;
-            max-width: 900px;
-            width: 100%;
-            margin: auto;
+            max-width: 800px;
         }
-        .input-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #333;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.2s;
-        }
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #6366f1; /* Indigo 500 */
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-        .loading-indicator {
+        /* Custom modal styles to replace alert() */
+        .modal {
             display: none;
-            text-align: center;
-            margin-top: 20px;
-            font-size: 1.1rem;
-            color: #555;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
         }
-        .results-container {
-            margin-top: 30px;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 30px;
-        }
-        .salon-card {
-            background-color: #f9fafb;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
+        .modal-content {
+            background-color: #ffffff;
+            margin: 15% auto;
             padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        .salon-card h3 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        .salon-card p {
-            font-size: 15px;
-            color: #555;
-            margin-bottom: 6px;
-        }
-        .salon-card a {
-            color: #6366f1;
-            text-decoration: none;
-        }
-        .salon-card a:hover {
-            text-decoration: underline;
-        }
-        .no-results {
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 400px;
             text-align: center;
-            color: #777;
-            font-size: 1.1rem;
-            padding: 20px;
-        }
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Find Hair Salons Near You!</h1>
+<body class="p-4 sm:p-8 flex items-center justify-center min-h-screen">
 
-        <div class="input-group">
-            <label for="locationInput" class="block text-sm mb-2">Location:</label>
-            <input type="text" id="locationInput" value="San Juan Capistrano, CA" class="rounded-lg" readonly>
-        </div>
+    <!-- Main Container -->
+    <div class="container bg-white p-6 md:p-10 rounded-3xl shadow-2xl space-y-8 border-t-8 border-purple-500">
+        <header class="text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Salon Finder</h1>
+            <p class="text-lg text-gray-600">Find hair salons and export your results to a CSV file.</p>
+        </header>
 
-        <div id="loadingIndicator" class="loading-indicator">
-            Searching for hair salons...
-        </div>
+        <!-- Search Section -->
+        <section class="space-y-4">
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input id="search-input" type="text" placeholder="e.g., Hair Salons in New York City" class="flex-1 p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200" required>
+                <button id="search-button" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
+                    Search Salons
+                </button>
+            </div>
+            <div id="loading-indicator" class="hidden text-center text-gray-500 mt-4">
+                <p>Searching for salons...</p>
+            </div>
+        </section>
 
-        <div id="results" class="results-container">
-            <!-- Salon results will be displayed here -->
-        </div>
+        <!-- Results and Export Section -->
+        <section id="results-section" class="hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-semibold text-gray-800">Results</h2>
+                <button id="export-button" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-xl transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    Export to CSV
+                </button>
+            </div>
+            
+            <div id="results-container" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                <!-- Salon results will be dynamically injected here -->
+            </div>
+        </section>
+        
+        <!-- Empty State Message -->
+        <p id="empty-state" class="hidden text-center text-gray-500">No results found. Please try a different search.</p>
+
     </div>
 
+    <!-- Custom Modal -->
+    <div id="custom-modal" class="modal">
+        <div class="modal-content">
+            <p id="modal-message" class="text-gray-700 mb-4"></p>
+            <button onclick="document.getElementById('custom-modal').style.display='none'" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-xl transition-colors duration-200">
+                Close
+            </button>
+        </div>
+    </div>
+    
     <script>
-        function displaySalons(salons) {
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = ''; // Clear previous results
-            if (salons.length === 0) {
-                resultsDiv.innerHTML = '<p class="no-results">No salons found.</p>';
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-button');
+        const exportButton = document.getElementById('export-button');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const resultsSection = document.getElementById('results-section');
+        const resultsContainer = document.getElementById('results-container');
+        const emptyState = document.getElementById('empty-state');
+        const customModal = document.getElementById('custom-modal');
+        const modalMessage = document.getElementById('modal-message');
+
+        let searchResults = [];
+
+        function showModal(message) {
+            modalMessage.textContent = message;
+            customModal.style.display = 'block';
+        }
+
+        // --- Search Logic ---
+        searchButton.addEventListener('click', async () => {
+            const query = searchInput.value.trim();
+            if (!query) {
+                showModal('Please enter a search query.');
                 return;
             }
+            
+            // Clear previous results and set up UI for new search
+            resultsContainer.innerHTML = '';
+            resultsSection.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            exportButton.disabled = true;
+            searchResults = [];
+            loadingIndicator.classList.remove('hidden');
 
-            salons.forEach(salon => {
-                const salonCard = document.createElement('div');
-                salonCard.className = 'salon-card';
-                salonCard.innerHTML = `
-                    <h3>${salon.name}</h3>
-                    <p><strong>Address:</strong> ${salon.address}</p>
-                    <p><strong>Phone:</strong> ${salon.phone}</p>
-                    ${salon.website !== 'Not available' && salon.website !== '' ? `<p><strong>Website:</strong> <a href="${salon.website}" target="_blank">${salon.website}</a></p>` : ''}
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            // Define the system instruction to guide the model's response
+            const systemPrompt = `You are a data extraction bot. Your task is to extract information about hair salons from search results. For each salon, find the name, address, phone number, and website. Format the output as a JSON array of objects. Each object should have the keys: "name", "address", "phone", and "website". If a piece of data is not available, use "N/A".`;
+
+            // Construct the payload for the API call
+            const payload = {
+                contents: [{ parts: [{ text: query }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "name": { "type": "STRING" },
+                                "address": { "type": "STRING" },
+                                "phone": { "type": "STRING" },
+                                "website": { "type": "STRING" }
+                            },
+                            "propertyOrdering": ["name", "address", "phone", "website"]
+                        }
+                    }
+                }
+            };
+            
+            const maxRetries = 3;
+            let currentRetry = 0;
+            let extractedData = [];
+
+            while (currentRetry < maxRetries) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) {
+                        if (response.status === 429 && currentRetry < maxRetries - 1) {
+                            const delay = Math.pow(2, currentRetry) * 1000;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            currentRetry++;
+                            continue;
+                        }
+                        if (response.status === 401) {
+                            showModal('Search failed: API key is invalid or missing. Please ensure your environment is configured correctly.');
+                            extractedData = [];
+                            break;
+                        }
+                        throw new Error(`API call failed with status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const candidate = result.candidates?.[0];
+
+                    if (candidate && candidate.content?.parts?.[0]?.text) {
+                        const jsonString = candidate.content.parts[0].text;
+                        try {
+                            extractedData = JSON.parse(jsonString);
+                        } catch (e) {
+                            console.error("Failed to parse JSON:", e);
+                            extractedData = [];
+                        }
+                    }
+                    break;
+
+                } catch (error) {
+                    if (currentRetry < maxRetries - 1) {
+                        const delay = Math.pow(2, currentRetry) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        currentRetry++;
+                        continue;
+                    }
+                    console.error("Search failed:", error);
+                    showModal("An error occurred during the search. Please check your query and try again.");
+                    extractedData = [];
+                    break;
+                }
+            }
+
+            if (extractedData.length > 0) {
+                searchResults = extractedData;
+                displayResults(searchResults);
+                exportButton.disabled = false;
+                resultsSection.classList.remove('hidden');
+            } else {
+                emptyState.classList.remove('hidden');
+            }
+            loadingIndicator.classList.add('hidden');
+        });
+
+        // --- Display Results Logic ---
+        function displayResults(results) {
+            resultsContainer.innerHTML = '';
+            if (results.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            results.forEach(salon => {
+                const resultCard = document.createElement('div');
+                resultCard.className = 'bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm';
+                resultCard.innerHTML = `
+                    <h3 class="text-lg font-semibold text-gray-700">${salon.name || 'N/A'}</h3>
+                    <p class="text-gray-600">${salon.address || 'N/A'}</p>
+                    <p class="text-sm text-gray-500">Phone: ${salon.phone || 'N/A'}</p>
+                    <a href="${salon.website}" target="_blank" class="text-sm text-purple-600 hover:underline">${salon.website || 'N/A'}</a>
                 `;
-                resultsDiv.appendChild(salonCard);
+                resultsContainer.appendChild(resultCard);
             });
         }
 
-        function displayMessage(message) {
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = `<p class="no-results">${message}</p>`;
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const salonsData = [
-                {
-                    "name": "Salon Bellus",
-                    "address": "26020 Acero, Mission Viejo, CA 92691 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 707-4000",
-                    "website": "http://salonbellus.com/"
-                },
-                {
-                    "name": "Zazen Salon & Spa",
-                    "address": "27746 Antonio Pkwy Suite L2, Ladera Ranch, CA 92694 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 388-4100",
-                    "website": "http://www.zazensalon.com/"
-                },
-                {
-                    "name": "Fantastic Sams Cut & Color",
-                    "address": "27600 Santa Margarita Pkwy Ste A, Mission Viejo, CA 92691 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 859-9777",
-                    "website": "https://www.fantasticsams.com/"
-                },
-                {
-                    "name": "Supercuts",
-                    "address": "25400 Alicia Pkwy Ste C, Laguna Hills, CA 92653 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 768-2222",
-                    "website": "https://www.supercuts.com/"
-                },
-                {
-                    "name": "Great Clips",
-                    "address": "24000 Alicia Pkwy Ste 12, Mission Viejo, CA 92691 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 360-1510",
-                    "website": "https://www.greatclips.com/"
-                },
-                {
-                    "name": "Sport Clips Haircuts of Mission Viejo",
-                    "address": "27746 Antonio Pkwy Ste R-4, Ladera Ranch, CA 92694 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 388-1000",
-                    "website": "https://haircuts.sportclips.com/"
-                },
-                {
-                    "name": "The Hair Parlor",
-                    "address": "24422 Del Prado Ave Ste 200, Dana Point, CA 92629 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 276-8575",
-                    "website": "http://www.thehairparlor.com/"
-                },
-                {
-                    "name": "Floyd's 99 Barbershop",
-                    "address": "25400 Alicia Pkwy Ste D, Laguna Hills, CA 92653 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 380-0099",
-                    "website": "https://floydsbarbershop.com/"
-                },
-                {
-                    "name": "Headquarters Hair Salon",
-                    "address": "29718 Rancho California Rd, Temecula, CA 92591 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(951) 694-8400",
-                    "website": "https://www.headquartershairsalon.com/"
-                },
-                {
-                    "name": "Salon Republic Mission Viejo",
-                    "address": "26020 Acero, Mission Viejo, CA 92691 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 215-0800",
-                    "website": "https://salonrepublic.com/"
-                },
-                {
-                    "name": "Salon Bamboo",
-                    "address": "26800 Aliso Creek Rd Ste E, Aliso Viejo, CA 92656 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 362-0900",
-                    "website": "http://www.salonbamboo.com/"
-                },
-                {
-                    "name": "Image Studios 360 Aliso Viejo",
-                    "address": "26821 Aliso Creek Rd Ste A, Aliso Viejo, CA 92656 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 702-8686",
-                    "website": "https://imagestudios360.com/"
-                },
-                {
-                    "name": "Aliso Viejo Hair Salon",
-                    "address": "26821 Aliso Creek Rd Ste A, Aliso Viejo, CA 92656 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 362-0900",
-                    "website": ""
-                },
-                {
-                    "name": "Cost Cutters",
-                    "address": "23654 El Toro Rd, Lake Forest, CA 92630 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 859-8800",
-                    "website": "https://www.costcutters.com/"
-                },
-                {
-                    "name": "SmartStyle Hair Salon",
-                    "address": "24000 El Toro Rd, Lake Forest, CA 92630 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
-                    "phone": "(949) 581-8080",
-                    "website": "https://www.smartstyle.com/"
-                }
-            ];
-            if (salonsData.length > 0) {
-                displaySalons(salonsData);
-            } else {
-                displayMessage("No hair salons found for 'San Juan Capistrano, CA'. Please try a different location.");
+        // --- CSV Export Logic ---
+        exportButton.addEventListener('click', () => {
+            if (searchResults.length === 0) {
+                showModal('There are no results to export.');
+                return;
             }
+
+            // Create CSV header
+            let csvContent = "data:text/csv;charset=utf-8,";
+            const headers = Object.keys(searchResults[0]).join(',');
+            csvContent += headers + '\n';
+
+            // Add rows
+            searchResults.forEach(row => {
+                const values = Object.values(row).map(value => `"${value}"`).join(',');
+                csvContent += values + '\n';
+            });
+
+            // Create and trigger download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "salon_results.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         });
+
     </script>
+
 </body>
 </html>
