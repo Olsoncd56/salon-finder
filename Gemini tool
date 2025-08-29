@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hair Salon Finder - San Juan Capistrano</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            max-width: 900px;
+            width: 100%;
+            margin: auto;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo 500 */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        .loading-indicator {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: #555;
+        }
+        .results-container {
+            margin-top: 30px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 30px;
+        }
+        .salon-card {
+            background-color: #f9fafb;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .salon-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .salon-card p {
+            font-size: 15px;
+            color: #555;
+            margin-bottom: 6px;
+        }
+        .salon-card a {
+            color: #6366f1;
+            text-decoration: none;
+        }
+        .salon-card a:hover {
+            text-decoration: underline;
+        }
+        .no-results {
+            text-align: center;
+            color: #777;
+            font-size: 1.1rem;
+            padding: 20px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Find Hair Salons Near You!</h1>
+
+        <div class="input-group">
+            <label for="locationInput" class="block text-sm mb-2">Location:</label>
+            <input type="text" id="locationInput" value="San Juan Capistrano, CA" class="rounded-lg" readonly>
+        </div>
+
+        <div id="loadingIndicator" class="loading-indicator">
+            Searching for hair salons...
+        </div>
+
+        <div id="results" class="results-container">
+            <!-- Salon results will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        function displaySalons(salons) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = ''; // Clear previous results
+            if (salons.length === 0) {
+                resultsDiv.innerHTML = '<p class="no-results">No salons found.</p>';
+                return;
+            }
+
+            salons.forEach(salon => {
+                const salonCard = document.createElement('div');
+                salonCard.className = 'salon-card';
+                salonCard.innerHTML = `
+                    <h3>${salon.name}</h3>
+                    <p><strong>Address:</strong> ${salon.address}</p>
+                    <p><strong>Phone:</strong> ${salon.phone}</p>
+                    ${salon.website !== 'Not available' && salon.website !== '' ? `<p><strong>Website:</strong> <a href="${salon.website}" target="_blank">${salon.website}</a></p>` : ''}
+                `;
+                resultsDiv.appendChild(salonCard);
+            });
+        }
+
+        function displayMessage(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `<p class="no-results">${message}</p>`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const salonsData = [
+                {
+                    "name": "Salon Bellus",
+                    "address": "26020 Acero, Mission Viejo, CA 92691 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 707-4000",
+                    "website": "http://salonbellus.com/"
+                },
+                {
+                    "name": "Zazen Salon & Spa",
+                    "address": "27746 Antonio Pkwy Suite L2, Ladera Ranch, CA 92694 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 388-4100",
+                    "website": "http://www.zazensalon.com/"
+                },
+                {
+                    "name": "Fantastic Sams Cut & Color",
+                    "address": "27600 Santa Margarita Pkwy Ste A, Mission Viejo, CA 92691 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 859-9777",
+                    "website": "https://www.fantasticsams.com/"
+                },
+                {
+                    "name": "Supercuts",
+                    "address": "25400 Alicia Pkwy Ste C, Laguna Hills, CA 92653 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 768-2222",
+                    "website": "https://www.supercuts.com/"
+                },
+                {
+                    "name": "Great Clips",
+                    "address": "24000 Alicia Pkwy Ste 12, Mission Viejo, CA 92691 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 360-1510",
+                    "website": "https://www.greatclips.com/"
+                },
+                {
+                    "name": "Sport Clips Haircuts of Mission Viejo",
+                    "address": "27746 Antonio Pkwy Ste R-4, Ladera Ranch, CA 92694 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 388-1000",
+                    "website": "https://haircuts.sportclips.com/"
+                },
+                {
+                    "name": "The Hair Parlor",
+                    "address": "24422 Del Prado Ave Ste 200, Dana Point, CA 92629 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 276-8575",
+                    "website": "http://www.thehairparlor.com/"
+                },
+                {
+                    "name": "Floyd's 99 Barbershop",
+                    "address": "25400 Alicia Pkwy Ste D, Laguna Hills, CA 92653 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 380-0099",
+                    "website": "https://floydsbarbershop.com/"
+                },
+                {
+                    "name": "Headquarters Hair Salon",
+                    "address": "29718 Rancho California Rd, Temecula, CA 92591 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(951) 694-8400",
+                    "website": "https://www.headquartershairsalon.com/"
+                },
+                {
+                    "name": "Salon Republic Mission Viejo",
+                    "address": "26020 Acero, Mission Viejo, CA 92691 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 215-0800",
+                    "website": "https://salonrepublic.com/"
+                },
+                {
+                    "name": "Salon Bamboo",
+                    "address": "26800 Aliso Creek Rd Ste E, Aliso Viejo, CA 92656 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 362-0900",
+                    "website": "http://www.salonbamboo.com/"
+                },
+                {
+                    "name": "Image Studios 360 Aliso Viejo",
+                    "address": "26821 Aliso Creek Rd Ste A, Aliso Viejo, CA 92656 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 702-8686",
+                    "website": "https://imagestudios360.com/"
+                },
+                {
+                    "name": "Aliso Viejo Hair Salon",
+                    "address": "26821 Aliso Creek Rd Ste A, Aliso Viejo, CA 92656 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 362-0900",
+                    "website": ""
+                },
+                {
+                    "name": "Cost Cutters",
+                    "address": "23654 El Toro Rd, Lake Forest, CA 92630 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 859-8800",
+                    "website": "https://www.costcutters.com/"
+                },
+                {
+                    "name": "SmartStyle Hair Salon",
+                    "address": "24000 El Toro Rd, Lake Forest, CA 92630 (Note: This result may be from a broader area search, please verify if it's within San Juan Capistrano)",
+                    "phone": "(949) 581-8080",
+                    "website": "https://www.smartstyle.com/"
+                }
+            ];
+            if (salonsData.length > 0) {
+                displaySalons(salonsData);
+            } else {
+                displayMessage("No hair salons found for 'San Juan Capistrano, CA'. Please try a different location.");
+            }
+        });
+    </script>
+</body>
+</html>
